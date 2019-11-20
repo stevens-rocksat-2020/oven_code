@@ -1,3 +1,5 @@
 [submodule "proto/proto/nanopb"]
 	path = proto/proto/nanopb
 	url = https://github.com/nanopb/nanopb.git
+[submodule "proto/nanopb"]
+	url = https://github.com/nanopb/nanopb.git
