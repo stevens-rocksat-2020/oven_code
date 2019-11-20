@@ -1,0 +1,56 @@
+syntax = "proto2";
+
+import "nanopb.proto";
+
+
+
+message SetTarget {
+    optional float targetTemp = 1;
+}
+
+enum OvenState {
+    OFF = 0;
+    ON = 1;
+    PROFILE = 3;
+    ERROR = 4;
+}
+
+message ReflowPoint {
+    required int64 time = 1;
+    required float temp = 2;
+}
+
+message ReflowCurve {
+    repeated ReflowPoint reflowPoints = 1 [(nanopb).max_count = 300];
+}
+
+message PIDTune {
+    optional float p = 1;
+    optional float i = 2;
+    optional float d = 3;
+}
+
+message OvenConfiguration {
+    optional PIDTune pidTune = 3;
+    optional ReflowCurve reflowCurve = 4;
+}
+
+message OvenStatus {
+    optional float ovenTemp = 1;
+    optional float ambientTemp = 2;
+    optional float targetTemp = 3;
+    optional OvenState ovenState = 4;
+    optional int32 outputPower = 5;
+}
+
+message TxMicro {
+    optional int64 timeStamp = 1;
+    optional OvenStatus ovenStatus = 2;
+    optional OvenConfiguration ovenConfiguration = 3;
+}
+
+message RxMicro {
+    optional SetTarget target = 1;
+    optional OvenState ovenState = 2;
+    optional OvenConfiguration ovenConfiguration = 3;
+}
