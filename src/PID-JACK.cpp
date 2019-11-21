@@ -24,6 +24,16 @@ double PID::get(double input)
     totalError+=error*dt;
     double dError=(error-lastError)/dt;
     lastError=error;
+    if(totalError>iMax)
+    {
+      totalError=iMax;
+    }
+    else if(totalError<-iMax)
+    {
+      totalError=-iMax;
+    }
+
+
 
     double out = kp*(error+ki*totalError+kd*dError);
     out+=127;
@@ -40,12 +50,12 @@ double PID::get(double input)
 
 void PID::pidLoop()
 {
-  if(millis()-lastTimestamp<250)
+  if(millis()-lastTimestamp<minLoopTime*1000)
   {
     return;
   }
   double curOut=get(ovenTemp());
-  if (ovenState == OvenState_ON)
+  if (ovenState != OvenState_OFF)
   {
     setOvenPower((int)curOut);
   }

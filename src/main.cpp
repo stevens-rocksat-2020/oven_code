@@ -12,7 +12,11 @@ uint8_t send_buffer[300];
 
 PacketSerial_<COBS> packetSerial;
 
+CurveFollower reflowCurve;
 PID thePid; 
+
+unsigned int reflowStartTime; 
+
 
 void sendPID();
 
@@ -37,7 +41,14 @@ void onPacketReceived(const uint8_t *buffer, size_t size) {
         }
         if (rx.has_ovenState) {
             thePid.ovenState = rx.ovenState;
+            if (thePid.ovenState == OvenState_PROFILE) {
+                reflowStartTime = millis(); 
+            }
             thePid.reset();
+        }
+
+        if (rx.has_ovenConfiguration && rx.ovenConfiguration.has_reflowCurve) {
+            reflowCurve.setTempertureCurve(rx.ovenConfiguration.reflowCurve);
         }
     }
 }
@@ -126,6 +137,11 @@ void loop() {
 //    sendDummyData();
 
       loopStart = millis();
+
+    if (thePid.ovenState == OvenState_PROFILE) {
+      thePid.target = reflowCurve.getTempForTime(millis() - reflowStartTime);
+    }
+
       thePid.pidLoop();
 //
 //      //Serial.println("Loop");``
