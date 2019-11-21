@@ -40,10 +40,14 @@ double PID::get(double input)
 
 void PID::pidLoop()
 {
-  double out = get(ovenTemp());
+  if(millis()-lastTimestamp<250)
+  {
+    return;
+  }
+  double curOut=get(ovenTemp());
   if (ovenState == OvenState_ON)
   {
-    setOvenPower((int)out);
+    setOvenPower((int)curOut);
   }
   else
   {

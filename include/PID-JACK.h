@@ -11,6 +11,8 @@ public:
     OvenState ovenState;
     double kp,ki,kd,target;
 
+    double mixerTime=0.5;//Half of the change recorded will be from this time
+
     double totalError=0;
     double lastError=0;
     long lastTimestamp=millis()-100;
