@@ -148,3 +148,4 @@ Temporary Items
 
 # End of https://www.gitignore.io/api/cmake,macos,clion+all,platformio
 
+.vscode/
