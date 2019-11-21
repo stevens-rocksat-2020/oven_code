@@ -1,16 +1,18 @@
 #include <Arduino.h>
 #include "pin_configuration.h"
 #include "OvenTemp.h"
-#include "autotune.h"
 #include "oven.pb.h"
 #include <pb_encode.h>
 #include <pb_decode.h>
 #include <PacketSerial.h>
 #include <CurveFollower.h>
+#include <PID-JACK.h>
 
 uint8_t send_buffer[300];
 
 PacketSerial_<COBS> packetSerial;
+
+PID thePid; 
 
 void sendPID();
 
@@ -20,22 +22,22 @@ void onPacketReceived(const uint8_t *buffer, size_t size) {
     bool status = pb_decode(&stream, RxMicro_fields, &rx);
     if (status) {
         if (rx.has_target && rx.target.has_targetTemp) {
-            setpoint = rx.target.targetTemp;
+            thePid.target = rx.target.targetTemp;
         }
         if (rx.has_ovenConfiguration && rx.ovenConfiguration.has_pidTune) {
             if (rx.ovenConfiguration.pidTune.has_i) {
-                ki = rx.ovenConfiguration.pidTune.i;
+                thePid.ki = rx.ovenConfiguration.pidTune.i;
             }
             if (rx.ovenConfiguration.pidTune.has_d) {
-                kd = rx.ovenConfiguration.pidTune.d;
+                thePid.kd = rx.ovenConfiguration.pidTune.d;
             }
             if (rx.ovenConfiguration.pidTune.has_p) {
-                kp = rx.ovenConfiguration.pidTune.p;
+                thePid.kp = rx.ovenConfiguration.pidTune.p;
             }
-//            sendPID();
         }
         if (rx.has_ovenState) {
-            ovenState = rx.ovenState;
+            thePid.ovenState = rx.ovenState;
+            thePid.reset();
         }
     }
 }
@@ -50,9 +52,9 @@ void sendPID() {
     tx.ovenConfiguration.pidTune.has_p = true;
     tx.ovenConfiguration.pidTune.has_i = true;
     tx.ovenConfiguration.pidTune.has_d = true;
-    tx.ovenConfiguration.pidTune.p = kp;
-    tx.ovenConfiguration.pidTune.i = ki;
-    tx.ovenConfiguration.pidTune.d = kd;
+    tx.ovenConfiguration.pidTune.p = thePid.kp;
+    tx.ovenConfiguration.pidTune.i = thePid.ki;
+    tx.ovenConfiguration.pidTune.d = thePid.kd;
 
     pb_ostream_t stream = pb_ostream_from_buffer(send_buffer, sizeof(send_buffer));
     pb_encode(&stream, TxMicro_fields, &tx);
@@ -74,10 +76,10 @@ void sendData() {
     tx.ovenStatus.has_ambientTemp = true;
     tx.ovenStatus.has_targetTemp = true;
     tx.ovenStatus.has_outputPower = true;
-    tx.ovenStatus.ovenState = ovenState;
+    tx.ovenStatus.ovenState = thePid.ovenState;
     tx.ovenStatus.ovenTemp = (float) ovenTemp();
     tx.ovenStatus.ambientTemp = (float) ambientTemp();
-    tx.ovenStatus.targetTemp = (float) setpoint;
+    tx.ovenStatus.targetTemp = (float) thePid.target;
     tx.ovenStatus.outputPower = getLastOvenPower();
     pb_ostream_t stream = pb_ostream_from_buffer(send_buffer, sizeof(send_buffer));
     pb_encode(&stream, TxMicro_fields, &tx);
@@ -110,7 +112,6 @@ void setup() {
     packetSerial.setPacketHandler(&onPacketReceived);
 
 //    Serial.begin(115200);
-    setupPID();
 
 }
 
@@ -125,7 +126,7 @@ void loop() {
 //    sendDummyData();
 
       loopStart = millis();
-      PIDLoop();
+      thePid.pidLoop();
 //
 //      //Serial.println("Loop");``
 //

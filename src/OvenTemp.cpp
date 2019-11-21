@@ -23,11 +23,11 @@ double ambientTemp() {
 
 void setOvenPower(int power) {
     lastOvenPower = power;
-    if (power > 136) {
+    if (power > 127) {
         digitalWrite(heat_enable, HIGH);
     }
 
-    if (power < 120) {
+    if (power < 127) {
         digitalWrite(heat_enable, LOW);
     }
     //    analogWrite(heat_enable, power);
